@@ -149,3 +149,17 @@ func (a *App) CreateAccount(name string, password string) AccountResult {
 	r := AccountResult{true, "Account created", account.Address.Hex(), name, dir}
 	return r
 }
+
+func (a *App) DeleteAccount(path string) bool {
+	log.Default().Printf("Deleting account: %s", path)
+	// check if file exists
+	_, err := os.Stat(path)
+	x := os.IsNotExist(err)
+	if x {
+		log.Default().Printf("Could not find file: %s", path)
+		return true // file does not exist, so we can return true
+	}
+
+	delete := os.Remove(path)
+	return delete == nil
+}

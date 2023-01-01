@@ -1,12 +1,12 @@
 <template>
   <el-card>
     <el-descriptions border title="Account Details">
-      <template #extra>
-        <div class="card-header">
-          <el-button class="button" :icon="Edit" @click="handleEdit(account?.address || '')">Edit</el-button>
-          <el-button class="button" type="primary" :icon="Upload" @click="sendPressed">Send</el-button>
-        </div>
-      </template>
+        <template #extra>
+          <div class="card-header">
+            <el-button class="button" :icon="Edit" @click="handleEdit(account?.address || '')">Edit</el-button>
+            <el-button class="button" type="primary" :icon="Upload" @click="sendPressed">Send</el-button>
+          </div>
+        </template>
       <el-descriptions-item label="Name">{{ account?.name }}</el-descriptions-item>
       <el-descriptions-item label="Address">
         <code>{{ account?.address }}</code>

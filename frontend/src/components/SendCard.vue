@@ -1,16 +1,15 @@
 <template>
-  <el-card class="card-margin" :hidden="props.hidden">
-    <template #header>
-      <div class="card-header">
-        <span>Send</span>
-      </div>
-    </template>
+  <el-dialog
+    v-model="isShowDialog"
+    :close-on-click-modal="false"
+    :destroy-on-close="true">
     <el-form
       ref="formRef"
       :model="form"
       label-width="150px">
       <el-form-item label="Amount" prop="amount">
-        <el-input v-model="form.amount" autocomplete="off" />
+        <el-input v-model="form.amount" autocomplete="off">
+        </el-input>
         <small class="small">{{ amountInWei() }} Wei</small>
       </el-form-item>
       <el-form-item label="To" prop="to">
@@ -18,13 +17,17 @@
           v-model="form.toAddress"
           :fetch-suggestions="toSearch"
           class="el-input"
-          placeholder="Please Input"
+          placeholder="Select"
+          clearable
           @select="handleToSelect">
+          <template #append>
+            <el-button :icon="User" />
+          </template>
         </el-autocomplete>
       </el-form-item>
 
       <el-form-item label="Password" prop="password">
-        <el-input v-model="form.password" autocomplete="off" type="password" />
+        <el-input show-password v-model="form.password" autocomplete="off" type="password" />
       </el-form-item>
       <el-form-item label="Note" prop="description">
         <el-input
@@ -33,34 +36,51 @@
           type="textarea"
           placeholder="Send 10 AKA to by best friend for the coffee" />
       </el-form-item>
+
       <el-form-item label="Nonce" prop="nonce">
         <el-input v-model="form.nonce" autocomplete="off" type="text" />
       </el-form-item>
       <el-form-item>
         <el-button class="cancel-button" @click="cancel()">Cancel</el-button>
         <el-button class="primary-button" type="primary" @click="submit(formRef)">Submit</el-button>
+        <div>advanced options</div>
       </el-form-item>
     </el-form>
-  </el-card>
+  </el-dialog>
+
 </template>
 
 
 <script lang="ts" setup>
 import { BigNumber, ethers } from "ethers";
-import { computed } from "@vue/reactivity";
 import { IAccount } from "../model/account";
 import { InternalRuleItem } from "async-validator";
 import { IState } from "../store";
 import { ITransaction } from "../model/transaction";
+import { main } from "../../wailsjs/go/models";
 import { reactive, ref, defineProps } from "vue";
+import { Search, User } from '@element-plus/icons-vue'
 import { uniqBy } from "lodash";
 import { useStore } from "vuex";
 import type { FormInstance, FormRules } from 'element-plus'
-import { main } from "../../wailsjs/go/models";
 
 const store = useStore<IState>();
 
-const props = defineProps<{ account: IAccount | undefined, hidden: boolean }>();
+const props = defineProps<{
+  account: IAccount | undefined,
+  title: string,
+}>();
+
+
+const isShowDialog = ref(false);
+const openDialog = () => {
+  isShowDialog.value = true;
+};
+
+defineExpose({
+  openDialog,
+});
+
 console.debug(`account: ${JSON.stringify(props.account?.address)}`);
 
 const formRef = ref<FormInstance>();
@@ -148,6 +168,8 @@ const cancel = () => {
   form.value.description = '';
   form.value.toAddress = '';
   form.value.password = '';
+  form.value.nonce = '';
+  isShowDialog.value = false;
 };
 
 const submit = async (formInstance: FormInstance | undefined) => {
@@ -168,3 +190,8 @@ const submit = async (formInstance: FormInstance | undefined) => {
   // cancel();
 }
 </script>
+<style scoped>
+.small {
+  color: #8d8d8d;
+}
+</style>
