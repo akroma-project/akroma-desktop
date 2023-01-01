@@ -6,6 +6,10 @@ export function CreateAccount(arg1, arg2) {
   return window['go']['main']['App']['CreateAccount'](arg1, arg2);
 }
 
+export function DeleteAccount(arg1) {
+  return window['go']['main']['App']['DeleteAccount'](arg1);
+}
+
 export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }

@@ -34,12 +34,16 @@ export default defineComponent({
   },
   setup() {
     const store = useStore<IState>();
-
+    store.commit("init");
+    
     const router = useRouter();
     router.push("/account");
 
     // see what accounts are stored in local stroage
-    store.dispatch('loadAccounts');
+    // store.dispatch('loadAccounts');
+    store.subscribe((mutation, state) => {
+      localStorage.setItem("store", JSON.stringify(state));
+    });
 
     return {};
   },

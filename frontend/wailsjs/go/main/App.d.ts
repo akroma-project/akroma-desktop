@@ -4,6 +4,8 @@ import {main} from '../models';
 
 export function CreateAccount(arg1:string,arg2:string):Promise<main.AccountResult>;
 
+export function DeleteAccount(arg1:string):Promise<boolean>;
+
 export function GetAccounts():Promise<Array<main.AccountResult>>;
 
 export function Send(arg1:main.SendCommand):Promise<main.SendResult>;

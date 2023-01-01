@@ -3,12 +3,19 @@
     <template #header>
       <div class="card-header">
         <span>Accounts</span>
-        <span>
-          <el-button class="button" v-on:click="goToCreateAccount()" text>Create</el-button>
-          <el-button class="button" v-on:click="importFromFileSystem()" text>Import</el-button>
-          <el-button class="button" v-on:click="importFromAkromaFolder()" text>Import (.akroma)</el-button>
-          <el-button class="button" v-on:click="storeAccounts()" text>Save All</el-button>
-        </span>
+        <el-dropdown>
+          <el-button type="primary">
+            Actions
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="goToCreateAccount()">Create Account</el-dropdown-item>
+              <el-dropdown-item @click="importFromFileSystem()">Import Keystore File</el-dropdown-item>
+              <el-dropdown-item @click="importFromAkromaFolder()" type="primary">Scan</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </template>
     <el-table border
@@ -37,22 +44,18 @@ import { useStore } from "vuex";
 import { IAccountsState, IState } from "../store";
 import { IAccount } from "../model/account";
 import { useRouter } from "vue-router";
+import { displaySuccess } from "../utils/feedback.utilities";
 const store = useStore<IState>();
 const router = useRouter();
 
 const state = computed<IAccountsState>(() => store.getters["accountsState"]);
 
 const importFromFileSystem = () => {
-  console.warn("this feature is not implemented yet");
+  displaySuccess("Importing from file system is not implemented yet");
 };
 
 const importFromAkromaFolder = () => {
   store.dispatch("getAccounts");
-};
-
-const storeAccounts = () => {
-  console.debug(`putting accounts in local storage`);
-  store.dispatch("storeAccounts");
 };
 
 const goToCreateAccount = () => {

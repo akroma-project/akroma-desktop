@@ -3,13 +3,28 @@ import { ethers } from "ethers";
 import { IAccount } from "../model/account";
 import { ITransaction } from "../model/transaction";
 import axios from "axios";
-import { CreateAccount, GetAccounts, Send } from '../../wailsjs/go/main/App'
+import _, { uniqueId } from "lodash";
+import { CreateAccount, DeleteAccount, GetAccounts, Send } from '../../wailsjs/go/main/App'
 import { main } from '../../wailsjs/go/models'
 import { displayError, displaySuccess } from "../utils/feedback.utilities";
 
 export interface IState {
   accountsState: IAccountsState;
   settingsState: ISettingsState;
+  contactsState: IContactsState;
+  addresses: Set<string>;
+
+}
+
+export interface IContactsState {
+  contacts: Contact[];
+}
+
+export class Contact {
+  id = uniqueId();
+  name = "";
+  address = "";
+  transactions = [] as ITransaction[];
 }
 
 export interface IAccountsState {
@@ -31,12 +46,52 @@ export default createStore<IState>({
       pin: "",
       apiBaseUrl: 'https://api.akroma.org',
       nodeUrl: 'https://boot2.akroma.org',
-    }
+    },
+    contactsState: {
+      contacts: []
+    },
+    addresses: new Set<string>(),
   },
   getters: {
     accountsState: (state) => state.accountsState,
+    contactsState: (state) => state.contactsState,
   },
   mutations: {
+    init(state) {
+      const store = localStorage.getItem("store");
+      if (store !== null) {
+        this.replaceState(Object.assign(state, JSON.parse(store)));
+      }
+    },
+    updateContact: (state, payload: Contact) => {
+      if (payload) {
+        const existing = state.contactsState.contacts.find(x => x.id === payload.id);
+        if (existing) {
+          existing.name = payload.name;
+          existing.address = payload.address;
+          displaySuccess('Contact updated');
+        }
+      }
+    },
+    deleteContact: (state, payload: string) => {
+      state.contactsState.contacts = state.contactsState.contacts.filter(x => x.id !== payload);
+      displaySuccess('Contact removed from contacts list');
+    },
+    clearContacts: (state) => {
+      state.contactsState.contacts = [];
+    },
+    addContact: (state, payload: Contact) => {
+      if (payload) {
+        state.contactsState.contacts = state.contactsState.contacts.concat(payload);
+        displaySuccess('Contact added to contacts list');
+      }
+    },
+    buildAddressIndex: (state) => {
+      state.addresses = new Set<string>();
+      state.accountsState.accounts.forEach(account => {
+        state.addresses.add(account.address);
+      });
+    },
     mergeExistingKeyStores: (state, payload: main.AccountResult[]) => {
       // get address from keystore
       // then merge with existing accounts
@@ -76,6 +131,16 @@ export default createStore<IState>({
         }
       }
     },
+    removeAccount: (state, payload: IAccount) => {
+      // accounts are loaded from local storage.
+      if (payload) {
+        const existing = state.accountsState.accounts.find(x => x.address === payload.address);
+        if (existing) {
+          state.accountsState.accounts = state.accountsState.accounts.filter(x => x.address !== payload.address);
+          displaySuccess('Account removed from accounts list');
+        }
+      }
+    },
     sentFunds: (state, payload: any) => {
       if (payload) {
         console.debug(`sendFunds: ${payload}`);
@@ -100,6 +165,7 @@ export default createStore<IState>({
       const existing = state.accountsState.accounts.find(x => x.address === payload.address);
       if (existing) {
         existing.transactions = payload.transactions;
+        state.addresses.add(payload.transactions.map(x => x.to).join());
       }
     },
     setBalanceForAccount: (state, payload: { address: string, balance: number }) => {
@@ -119,8 +185,29 @@ export default createStore<IState>({
         };
       }
     },
+    updateAccount: (state, payload: IAccount) => {
+      if (payload) {
+        const existing = state.accountsState.accounts.find(x => x.address === payload.address);
+        if (existing) {
+          existing.name = payload.name;
+          existing.description = payload.description;
+          existing.password = payload.password;
+          displaySuccess('Account updated');
+        } else {
+          displayError('Account not found');
+        }
+      }
+    },
   },
   actions: {
+    async createContact({ commit, state }, payload: Contact): Promise<string | boolean> {
+      const exists = state.contactsState.contacts.find(x => x.address === payload.address)
+      if (exists) {
+        return "Contact already exists";
+      }
+      commit("addContact", payload);
+      return true;
+    },
     async createAccount({ commit }, payload: IAccount) {
       console.debug(`createAccount: ${JSON.stringify(payload)}`);
       commit("addAccount", payload);
@@ -129,11 +216,25 @@ export default createStore<IState>({
       commit("accountCreated", account);
       // sendMessage(data);
     },
+    async deleteAccount({ commit }, payload: IAccount) {
+      const path = payload?.keyStorePath;
+      if (!path) {
+        displayError('Unable to delete account, missing path');
+        return;
+      }
+      const deleted = await DeleteAccount(path);
+      if (deleted) {
+        commit("removeAccount", payload);
+        displaySuccess('Account keystore file deleted or could not be found');
+      } else {
+        displayError('Unable to delete account');
+      }
+    },
     async send({ commit }, payload: main.SendCommand) {
       console.debug(`sending: ${JSON.stringify(payload)}`);
       const result = await Send(payload);
       console.debug(`result: ${JSON.stringify(result)}`);
-      if(result?.success) {
+      if (result?.success) {
         displaySuccess('Transaction submitted');
         // commit("sentFunds", result);
       } else {
@@ -165,47 +266,6 @@ export default createStore<IState>({
           commit("setTransactionsForAccount", { address, transactions: items });
         });
     },
-    loadAccounts({ commit }) {
-      // load = local storage
-      const accounts = localStorage.getItem("accounts");
-      const accountsJson: IAccount[] = JSON.parse(accounts ?? "[]");
-      commit("setAccounts", accountsJson);
-    },
-    storeAccounts({ commit }) {
-      // store = local storage
-      console.debug('storing accounts to local storage');
-      const accounts = this.state.accountsState.accounts.filter(x => x.address !== undefined);
-      localStorage.setItem("accounts", JSON.stringify(accounts));
-      commit("setAccounts", accounts);
-    },
-    loadSettings({ commit }) {
-      // load = local storage
-      const settings = localStorage.getItem("settings");
-      const settingsJson: ISettingsState = JSON.parse(settings ?? "{}");
-      console.debug(`settings loaded: ${JSON.stringify(settingsJson)}`);
-      commit("setSettings", settingsJson);
-    },
-    storeSettings({ commit }, settings: ISettingsState) {
-      // store = local storage
-      console.debug('storing settings to local storage');
-      localStorage.setItem("settings", JSON.stringify(settings));
-      commit("setSettings", settings);
-
-    },
-    updateAccount({ commit }, payload: IAccount) {
-      // update = local storage
-      const accounts = localStorage.getItem("accounts");
-      const accountsJson: IAccount[] = JSON.parse(accounts ?? "[]");
-      const index = accountsJson.findIndex(x => x.address === payload.address);
-      if (index >= 0) {
-        const account = accountsJson[index];
-        account.name = payload.name;
-        account.description = payload.description;
-        account.password = payload.password;
-      }
-      localStorage.setItem("accounts", JSON.stringify(accountsJson));
-      commit("setAccounts", accountsJson);
-    }
   },
   modules: {},
 });

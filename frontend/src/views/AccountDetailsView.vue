@@ -1,6 +1,6 @@
 <template>
-  <AccountDetails :account="account" @sendPressed="toggleSendHidden" />
-  <SendCard :account="account" :hidden="sendHidden" @close="toggleSendHidden" />
+  <AccountDetails :account="account" @sendPressed="openDialogSend" />
+  <SendCard :account="account" :title="'Send'" @close="toggleSendHidden" ref="dialogSend" />
   <el-card class="card-margin">
     <template #header>
       <div class="card-header">
@@ -39,11 +39,13 @@ const { address } = route.params;
 onMounted(() => {
   store.dispatch('getTransactionsForAccount', address);
   store.dispatch('getBalanceForAddress', address);
-
-  setTimeout(() => {
-    store.dispatch("storeAccounts");
-  }, 3000);
 })
+
+
+const dialogSend = ref();
+const openDialogSend = () => {
+  dialogSend.value.openDialog();
+};
 
 const account = computed<IAccount | undefined>(() => store.state.accountsState.accounts.find((p) => p.address === address));
 const sendHidden = ref(true);

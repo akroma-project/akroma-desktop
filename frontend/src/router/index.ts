@@ -4,6 +4,7 @@ import AccountDetailsView from "../views/AccountDetailsView.vue";
 import AccountEditView from "../views/AccountEditView.vue";
 import AccountListView from "../views/AccountListView.vue";
 import ContactsView from "../views/ContactsView.vue";
+import ContactEditView from "../views/ContactEditView.vue";
 import ReceiveView from "../views/ReceiveView.vue";
 import SettingsView from "../views/SettingsView.vue";
 
@@ -36,6 +37,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/contacts",
     component: ContactsView,
     name: "contacts",
+  },
+  {
+    path: "/contact/edit/:id",
+    component: ContactEditView,
+    name: "contact-edit",
   },
   {
     path: "/settings",
