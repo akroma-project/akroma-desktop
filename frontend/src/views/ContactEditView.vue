@@ -20,6 +20,9 @@
       <el-form-item label="Address" prop="address">
         <el-input v-model="form.address" autocomplete="off" aria-readonly="true" :readonly=true disabled="disabled" />
       </el-form-item>
+      <el-form-item label="Owned" prop="owned">
+        <el-checkbox v-model="form.owned" />
+      </el-form-item>
       <!-- <el-form-item label="Description" prop="description">
         <el-input
           v-model="form.description"
@@ -52,11 +55,13 @@ const store = useStore<IState>();
 const route = useRoute();
 const router = useRouter();
 const { id } = route.params;
+console.debug(`id: ${id}`);
 const contact = computed<Contact | undefined>(() => store.state.contactsState.contacts.find((p) => p.id === id));
 const form = reactive({
   id: contact.value?.id || 0,
   name: contact.value?.name || '',
   address: contact.value?.address || '',
+  owned: contact.value?.owned || false,
   // description: contact.value?.description,
 });
 

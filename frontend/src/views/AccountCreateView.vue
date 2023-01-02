@@ -72,9 +72,10 @@ const submit = async (formInstance: FormInstance | undefined) => {
     return
   }
   console.debug(`formEl: ${JSON.stringify(form)}`);
-  await formInstance.validate((valid, fields) => {
+  await formInstance.validate(async (valid, fields) => {
     if (valid) {
-      store.dispatch('createAccount', form);
+      await store.dispatch('createAccount', form);
+      await store.dispatch('getAccounts');
       router.push("/account");
     } else {
       console.log('form is not valid:', fields)
