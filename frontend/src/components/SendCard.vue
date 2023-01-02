@@ -6,6 +6,7 @@
     <el-form
       ref="formRef"
       :model="form"
+      :disabled="isDisabled"
       label-width="150px">
       <el-form-item label="Amount" prop="amount">
         <el-input v-model="form.amount" autocomplete="off">
@@ -14,11 +15,13 @@
       </el-form-item>
       <el-form-item label="To" prop="to">
         <el-autocomplete
-          v-model="form.toAddress"
+          v-model="form.toDisplay"
           :fetch-suggestions="toSearch"
           class="el-input"
           placeholder="Select"
+          value-key="display"
           clearable
+          @change="handleToCleared"
           @select="handleToSelect">
           <template #append>
             <el-button :icon="User" />
@@ -37,13 +40,13 @@
           placeholder="Send 10 AKA to by best friend for the coffee" />
       </el-form-item>
 
-      <el-form-item label="Nonce" prop="nonce">
+      <!-- <el-form-item label="Nonce" prop="nonce">
         <el-input v-model="form.nonce" autocomplete="off" type="text" />
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
         <el-button class="cancel-button" @click="cancel()">Cancel</el-button>
-        <el-button class="primary-button" type="primary" @click="submit(formRef)">Submit</el-button>
-        <div>advanced options</div>
+        <el-button class="primary-button" type="primary" :loading="isDisabled" @click="submit(formRef)">Submit</el-button>
+        <!-- <div>advanced options</div> -->
       </el-form-item>
     </el-form>
   </el-dialog>
@@ -55,14 +58,13 @@
 import { BigNumber, ethers } from "ethers";
 import { IAccount } from "../model/account";
 import { InternalRuleItem } from "async-validator";
-import { IState } from "../store";
-import { ITransaction } from "../model/transaction";
+import { Contact, IState } from "../store";
 import { main } from "../../wailsjs/go/models";
 import { reactive, ref, defineProps } from "vue";
-import { Search, User } from '@element-plus/icons-vue'
-import { uniqBy } from "lodash";
+import { User } from '@element-plus/icons-vue'
 import { useStore } from "vuex";
 import type { FormInstance, FormRules } from 'element-plus'
+import { displayError, displaySuccess } from "../utils/feedback.utilities";
 
 const store = useStore<IState>();
 
@@ -76,49 +78,51 @@ const isShowDialog = ref(false);
 const openDialog = () => {
   isShowDialog.value = true;
 };
+const closeDialog = (): void => {
+  isShowDialog.value = false;
+}
 
 defineExpose({
   openDialog,
 });
 
-console.debug(`account: ${JSON.stringify(props.account?.address)}`);
-
 const formRef = ref<FormInstance>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toSearch = (queryString: string, cb: any) => {
-  const results = queryString
-    ? props?.account?.transactions?.filter((p) => p?.to?.toLowerCase().indexOf(queryString.toLowerCase()) !== -1)
-    : props?.account?.transactions;
-  const unique = uniqBy(results, 'to');
-  const mapped = unique.map((p: ITransaction) => {
-    return {
-      value: p.to
-    }
-  })
-  cb(mapped)
+  return queryString
+    ? store.state.contactsState.contacts.filter((p) => p?.name?.toLowerCase().indexOf(queryString.toLowerCase()) !== -1)
+    : store.state.contactsState.contacts;
 }
 
-const handleToSelect = (item: ITransaction) => {
-  console.log(item)
-  console.debug(`sendForm.to: ${JSON.stringify(form)}`);
+const handleToSelect = (item: Contact) => {
+  form.value.toContact = item;
+  console.debug(`selected: ${JSON.stringify(item)}`);
+  console.debug(`form: ${JSON.stringify(form)}`);
+
 }
 
+const handleToCleared = () => {
+  form.value.toContact = {} as Contact;
+  form.value.toDisplay = '';
+}
 
 const form = ref({
   amount: 0,
   description: '',
-  toAddress: '',
+  toDisplay: '',
+  toContact: {} as Contact,
   password: props.account?.password,
   nonce: '',
 });
+
+const isDisabled = ref(false);
 
 const amountInWei = () => {
   const amount = form.value.amount;
   console.debug(`amount: ${amount}`);
   return BigNumber.from(ethers.utils.parseEther(amount.toString()));
 }
-console.debug(`amountInWei: ${amountInWei()}`);
 
 const validateAmount = (rule: InternalRuleItem, value: number, callback: (error: string | Error | undefined) => void) => {
   const balance = props?.account?.balance || 0;
@@ -166,29 +170,47 @@ const sendRules = reactive<FormRules>({
 const cancel = () => {
   form.value.amount = 0;
   form.value.description = '';
-  form.value.toAddress = '';
+  form.value.toDisplay = '';
+  form.value.toContact = {} as Contact;
   form.value.password = '';
   form.value.nonce = '';
-  isShowDialog.value = false;
+  closeDialog();
 };
 
 const submit = async (formInstance: FormInstance | undefined) => {
+  isDisabled.value = true;
   if (!formInstance) {
     console.warn('formEl is undefined');
     return
   }
+  const toAddress = getToAddress(form);
   const sendRequest: main.SendCommand = {
-    path: props?.account?.keyStorePath || '',
-    fromAddress: props?.account?.address || '',
-    toAddress: form.value.toAddress,
-    password: form.value.password || '',
+    path: props?.account?.keyStorePath || 'missing-path',
+    fromAddress: props?.account?.address || 'missing-from',
+    toAddress: toAddress,
+    password: form.value.password || 'missing-password',
     amount: amountInWei().toString(),
     nonce: form.value.nonce,
   };
   // console.debug(`sendRequest: ${JSON.stringify(sendRequest)}`);
-  await store.dispatch('send', sendRequest);
-  // cancel();
+  const result = await store.dispatch('send', sendRequest);
+  console.debug(`result: ${JSON.stringify(result)}`);
+  if (result?.success) {
+    displaySuccess('Transaction submitted');
+    closeDialog();
+  } else {
+    displayError(result.message);
+  }
+  isDisabled.value = true;
 }
+
+const getToAddress = (form: any) => {
+  if (form.value.toContact?.address) {
+    return form.value.toContact.address;
+  }
+  return form.value.toDisplay;
+}
+
 </script>
 <style scoped>
 .small {

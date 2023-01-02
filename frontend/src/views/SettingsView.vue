@@ -54,19 +54,15 @@ const submit = async (formInstance: FormInstance | undefined) => {
     console.warn('formEl is undefined');
     return
   }
-  console.debug(`saving settings: ${JSON.stringify(form)}`);
-  await formInstance.validate((valid, fields) => {
-    if (valid) {
-      store.dispatch('storeSettings', form);
-    } else {
-      console.log('form is not valid:', fields)
-    }
-  })
+  // console.debug(`saving settings: ${JSON.stringify(form)}`);
+  // await formInstance.validate((valid, fields) => {
+  //   if (valid) {
+  //     store.dispatch('storeSettings', form);
+  //   } else {
+  //     console.log('form is not valid:', fields)
+  //   }
+  // })
 }
-
-onMounted(() => {
-  store.dispatch('loadSettings');
-});
 </script>
 
 <style>

@@ -3,7 +3,8 @@ import { ethers } from "ethers";
 import { IAccount } from "../model/account";
 import { ITransaction } from "../model/transaction";
 import axios from "axios";
-import _, { uniqueId } from "lodash";
+import _ from "lodash";
+import uniqid from 'uniqid';
 import { CreateAccount, DeleteAccount, GetAccounts, Send } from '../../wailsjs/go/main/App'
 import { main } from '../../wailsjs/go/models'
 import { displayError, displaySuccess } from "../utils/feedback.utilities";
@@ -12,6 +13,7 @@ export interface IState {
   accountsState: IAccountsState;
   settingsState: ISettingsState;
   contactsState: IContactsState;
+  // addresses is not currently used, set is not init when deserializing from local storage
   addresses: Set<string>;
 
 }
@@ -21,10 +23,12 @@ export interface IContactsState {
 }
 
 export class Contact {
-  id = uniqueId();
+  id = uniqid();
   name = "";
   address = "";
   transactions = [] as ITransaction[];
+  display = '';
+  owned = false;
 }
 
 export interface IAccountsState {
@@ -63,12 +67,23 @@ export default createStore<IState>({
         this.replaceState(Object.assign(state, JSON.parse(store)));
       }
     },
+    chore: (state) => {
+      // remove contact with name stex
+      state.contactsState.contacts = state.contactsState.contacts.filter(x => x.name !== 'stex');
+    },
     updateContact: (state, payload: Contact) => {
       if (payload) {
         const existing = state.contactsState.contacts.find(x => x.id === payload.id);
         if (existing) {
           existing.name = payload.name;
           existing.address = payload.address;
+          existing.owned = payload.owned;
+          if(existing.owned == false) {
+            existing.display = `EXTERNAL: ${existing.name} (${existing.address})`;
+          } else {
+            existing.display = `${existing.name} (${existing.address})`;
+          }
+          
           displaySuccess('Contact updated');
         }
       }
@@ -82,6 +97,11 @@ export default createStore<IState>({
     },
     addContact: (state, payload: Contact) => {
       if (payload) {
+        if(payload.owned == false) {
+          payload.display = `EXTERNAL: ${payload.name} (${payload.address})`;
+        } else {
+          payload.display = `${payload.name} (${payload.address})`;
+        }
         state.contactsState.contacts = state.contactsState.contacts.concat(payload);
         displaySuccess('Contact added to contacts list');
       }
@@ -165,7 +185,11 @@ export default createStore<IState>({
       const existing = state.accountsState.accounts.find(x => x.address === payload.address);
       if (existing) {
         existing.transactions = payload.transactions;
-        state.addresses.add(payload.transactions.map(x => x.to).join());
+        // if (state.addresses) {
+        //   console.debug(`addresses: ${typeof(state.addresses)}`);
+        //   console.debug(`addresses: ${JSON.stringify(state.addresses)}`);
+        //   //  state.addresses.add(payload.transactions.map(x => x.to).join());
+        // }
       }
     },
     setBalanceForAccount: (state, payload: { address: string, balance: number }) => {
@@ -214,7 +238,6 @@ export default createStore<IState>({
       const account = await CreateAccount(payload?.name, payload?.password);
       console.debug(`account: ${JSON.stringify(account)}`);
       commit("accountCreated", account);
-      // sendMessage(data);
     },
     async deleteAccount({ commit }, payload: IAccount) {
       const path = payload?.keyStorePath;
@@ -230,16 +253,10 @@ export default createStore<IState>({
         displayError('Unable to delete account');
       }
     },
-    async send({ commit }, payload: main.SendCommand) {
+    async send({ commit }, payload: main.SendCommand) : Promise<main.SendResult> {
       console.debug(`sending: ${JSON.stringify(payload)}`);
       const result = await Send(payload);
-      console.debug(`result: ${JSON.stringify(result)}`);
-      if (result?.success) {
-        displaySuccess('Transaction submitted');
-        // commit("sentFunds", result);
-      } else {
-        displayError(result.message);
-      }
+      return result;
     },
     async getAccounts({ commit }) {
       const accounts = await GetAccounts();

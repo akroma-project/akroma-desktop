@@ -14,9 +14,10 @@
       table-layout="auto">
       <!-- <el-table-column prop="id" sortable label="Id" /> -->
       <el-table-column prop="name" sortable label="Name" />
+      <el-table-column prop="owned" sortable label="Owned" />
       <el-table-column prop="address" sortable label="Address">
         <template #default="scope">
-          <code>{{ scope.row.address }}</code>
+          <Address v-if="scope.row.address"  :address="scope.row.address" :contact=undefined :me="''" />
         </template>
       </el-table-column>
       <el-table-column label="Actions">
@@ -28,6 +29,7 @@
   </el-card>
 </template>
 <script lang="ts" setup>
+import Address from "../components/Address.vue";
 import CreateContactModal from "../components/CreateContactModal.vue";
 import { Upload, Edit } from '@element-plus/icons-vue'
 import { defineProps, defineEmits, computed, ref } from "vue";
