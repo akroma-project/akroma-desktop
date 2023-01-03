@@ -13,7 +13,6 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      # Checkout code
       - uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -25,7 +24,6 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      # Checkout code
       - uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -46,7 +44,6 @@ jobs:
   windows:
     runs-on: windows-2022
     steps:
-      # Checkout code
       - uses: actions/checkout@v2
         with:
           submodules: recursive
