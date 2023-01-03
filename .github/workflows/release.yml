@@ -17,7 +17,7 @@ jobs:
         build: [
           {name: akroma-desktop, platform: linux/amd64, os: ubuntu-latest},
           {name: akroma-desktop.exe, platform: windows/amd64, os: windows-latest},
-          {name: akroma-desktop, platform: darwin/universal, os: macos-latest}
+          {name: akroma, platform: darwin/universal, os: macos-latest}
         ]
     runs-on: ${{ matrix.build.os }}
     steps:
