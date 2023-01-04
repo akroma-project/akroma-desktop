@@ -3,9 +3,6 @@ permissions:
   contents: write
   
 on:
-  pull_request:
-    branches:
-      - main
   push:
     tags:
       - "v*"
@@ -28,3 +25,11 @@ jobs:
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
+            - name: post-notice-to-twitter
+      - uses: m1ner79/Github-Twittction@v1.0.1
+        with:
+          twitter_status: "Akroma Desktop\n\nNew Release:\nhttps://github.com/akroma-project/akroma-desktop/releases \n\n🥳"
+          twitter_consumer_key: ${{ secrets.TWITTER_CONSUMER_API_KEY }} 
+          twitter_consumer_secret: ${{ secrets.TWITTER_CONSUMER_API_SECRET }} 
+          twitter_access_token_key: ${{ secrets.TWITTER_ACCESS_TOKEN }} 
+          twitter_access_token_secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }} 
