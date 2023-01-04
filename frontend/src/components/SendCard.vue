@@ -37,7 +37,7 @@
           v-model="form.description"
           :rows="2"
           type="textarea"
-          placeholder="Send 10 AKA to by best friend for the coffee" />
+          placeholder="Send 10 AKA to my best friend for the coffee" />
       </el-form-item>
 
       <!-- <el-form-item label="Nonce" prop="nonce">
@@ -97,9 +97,6 @@ const toSearch = (queryString: string, cb: any) => {
 
 const handleToSelect = (item: Contact) => {
   form.value.toContact = item;
-  console.debug(`selected: ${JSON.stringify(item)}`);
-  console.debug(`form: ${JSON.stringify(form)}`);
-
 }
 
 const handleToCleared = () => {
