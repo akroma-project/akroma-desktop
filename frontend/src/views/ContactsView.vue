@@ -5,7 +5,6 @@
       <div class="card-header">
         <span>Contacts</span>
         <el-button type="primary" @click="openDialogSend()" class="button" :icon="Upload">Create</el-button>
-        <!-- <el-button type="primary" @click="clear()" class="button" :icon="Upload">Clear</el-button> -->
       </div>
     </template>
     <el-table border
@@ -52,9 +51,5 @@ const toggleCreateModel = () => {
 
 const edit = (contact: Contact) => {
   router.push({ name: 'contact-edit', params: { id: contact.id } });
-}
-
-const clear = () => {
-  store.commit('clearContacts');
 }
 </script>

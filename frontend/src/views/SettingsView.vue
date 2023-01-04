@@ -28,6 +28,7 @@ import { useStore } from "vuex";
 import { ISettingsState, IState } from "../store";
 import { useRouter } from "vue-router";
 import type { FormInstance, FormRules } from 'element-plus'
+import { displayError } from "../utils/feedback.utilities";
 const store = useStore<IState>();
 const router = useRouter();
 const formRef = ref<FormInstance>()
@@ -54,6 +55,7 @@ const submit = async (formInstance: FormInstance | undefined) => {
     console.warn('formEl is undefined');
     return
   }
+  displayError('Not implemented yet');
   // console.debug(`saving settings: ${JSON.stringify(form)}`);
   // await formInstance.validate((valid, fields) => {
   //   if (valid) {

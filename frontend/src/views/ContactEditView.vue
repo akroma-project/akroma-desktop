@@ -9,10 +9,6 @@
       :model="form"
       status-icon
       label-width="120px">
-      <!-- <el-form-item label="Id" prop="id">
-        <el-input v-model="form.id" autocomplete="off" />
-      </el-form-item> -->
-
       <el-form-item label="Name" prop="name">
         <el-input v-model="form.name" autocomplete="off" />
       </el-form-item>
